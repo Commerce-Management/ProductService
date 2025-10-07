@@ -4,9 +4,5 @@ namespace ProductService.Controllers;
 
 public class ProductsController : Controller
 {
-    // GET
-    public IActionResult Index()
-    {
-        return View();
-    }
+ 
 }
