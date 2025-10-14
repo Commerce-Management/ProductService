@@ -1,3 +1,14 @@
-﻿namespace ProductService.Shared.DTO;
+﻿using Microsoft.AspNetCore.Http;
 
-public record UpdateProductDto();
+namespace ProductService.Shared.DTO;
+
+public record UpdateProductDto(
+    string Name,
+    string Description,
+    decimal Price,
+    int StockQuantity, 
+    
+    IFormFile[]? NewImages,
+    List<string>? RemoveImageUrls,
+    
+    List<string>? CategoryIds);
