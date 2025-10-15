@@ -46,8 +46,8 @@ public class ProductService(
             query = query.Where(p => p.ProductCategories.Any(pc => pc.CategoryId == categoryId.Value));
         }
 
-        if (!string.IsNullOrEmpty(sortField))
-        {
+        if (!string.IsNullOrEmpty(sortField))                         
+        {                                                                         
             var propertyInfo = typeof(Product).GetProperty(sortField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
             if (propertyInfo != null)
             {
