@@ -7,8 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+      <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+      <PackageReference Include="Grpc.Tools" Version="2.72.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="2.3.0" />
       <PackageReference Include="Serilog" Version="4.3.1-dev-02387" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Protos\Shop.proto" GrpcServices="Client" />
     </ItemGroup>
 
 </Project>
