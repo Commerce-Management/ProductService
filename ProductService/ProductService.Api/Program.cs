@@ -13,6 +13,7 @@ using ProductService.Infrastructure.Interfaces.Entities;
 using ProductService.Infrastructure.Repositories.Base;
 using ProductService.Infrastructure.Repositories.Entities;
 using ProductService.Shared.DTO.Jwt;
+using ProductService.Shared.Protos.GrpcShopService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,6 +150,16 @@ builder.Services.AddScoped<IProductImageService, ProductImageService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+
+
+
+//gRPC - Client 
+builder.Services.AddGrpcClient<ShopService.ShopServiceClient>(options =>
+{
+    options.Address = new Uri(builder.Configuration["gRPC:UserService"]); 
+});
+
+
 
 // вариант A — передать пустой делегат + типы профилей
 builder.Services.AddAutoMapper(cfg => { }, typeof(ProductService.Core.Profiles.ProductProfile));

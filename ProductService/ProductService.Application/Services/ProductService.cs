@@ -7,6 +7,8 @@ using ProductService.Core.Interfaces;
 using ProductService.Infrastructure.Interfaces.Base;
 using ProductService.Infrastructure.Interfaces.Entities;
 using ProductService.Shared.DTO;
+using Grpc.Net.Client;
+using ProductService.Shared.Protos.GrpcShopService;
 
 namespace ProductService.Application.Services;
 
@@ -15,8 +17,7 @@ public class ProductService(
     IProductRepository productRepository,
     IProductImageService productImageService,
     IProductCategoryRepository productCategoryRepository,
-    IShopRepository shopRepository,
-    ICategoryService categoryService,
+    ShopService.ShopServiceClient shopServiceClient,
     IMapper mapper) : IProductService
 {
     public async Task<(IEnumerable<GetProductDto> Products, int TotalCount)> GetPaginatedProductsAsync(
@@ -28,7 +29,11 @@ public class ProductService(
         string? sortField = null,
         string? sortDirection = "asc")
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         
         if (shop == null)
             throw new InvalidOperationException("Shop is not found by this id");
@@ -36,7 +41,7 @@ public class ProductService(
             throw new InvalidOperationException("Access for this shop is locked");
 
         var query = productRepository.GetQueryableEntities()
-            .Where(p => p.ShopId == shop.Id)
+            .Where(p => p.ShopId.ToString() == shop.ShopId)
             .Include(p => p.ProductCategories)
                 .ThenInclude(pc => pc.Category)
             .AsNoTracking();
@@ -108,12 +113,15 @@ public class ProductService(
         string searchTerm,
         bool loadFullImages = false)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
         var query = productRepository.GetQueryableEntities()
-            .Where(p => p.ShopId == shop.Id)
+            .Where(p => p.ShopId.ToString() == shop.ShopId)
             .Include(p => p.ProductCategories)
             .ThenInclude(pc => pc.Category)
             .Where(product =>
@@ -146,12 +154,15 @@ public class ProductService(
         Guid currentUserId,
         bool loadFullImages = false)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
         var products = await productRepository.GetQueryableEntities()
-            .Where(p => p.ShopId == shop.Id)
+            .Where(p => p.ShopId.ToString() == shop.ShopId)
             .Include(p => p.ProductCategories)
             .ThenInclude(pc => pc.Category)
             .AsNoTracking()
@@ -179,12 +190,15 @@ public class ProductService(
         Guid id,
         bool loadFullImages = true)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
         var product = await productRepository.GetQueryableEntities()
-            .FirstOrDefaultAsync(p => p.Id == id && p.ShopId == shop.Id);
+            .FirstOrDefaultAsync(p => p.Id == id && p.ShopId.ToString() == shop.ShopId);
 
         if (product == null)
             return null!;
@@ -204,11 +218,15 @@ public class ProductService(
         Guid currentUserId,
         CreateProductDto productDto)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
+
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
-        if (productDto.ShopId != shop.Id.ToString())
+        if (productDto.ShopId != shop.ShopId)
             throw new InvalidOperationException("Вы пытаетесь создать товар в чужом магазине.");
 
         await unitOfWork.BeginTransactionAsync();
@@ -216,63 +234,34 @@ public class ProductService(
         {
             var productEntity = mapper.Map<Product>(productDto);
 
-            var customBagCategory = await categoryService.GetCategoryByName("Custom Bag");
-            if (customBagCategory == null)
-                throw new ArgumentException("Custom Bag category not found");
-
-            var isCustomBag = productDto.CategoryIds != null
-                              && productDto.CategoryIds.Contains(customBagCategory.Id.ToString());
-
-            if (isCustomBag)
+            if (productDto.Images is { Length: > 0 })
             {
-                if (string.IsNullOrEmpty(productDto.DesignData))
-                    throw new ArgumentException("DesignData is required for custom bag");
-                if (string.IsNullOrEmpty(productDto.PreviewImage))
-                    throw new ArgumentException("PreviewImage is required for custom bag");
-                if (productDto.UserId == null)
-                    throw new ArgumentException("UserId is required for custom bag");
-
-                productEntity.DesignData = productDto.DesignData;
-                productEntity.PreviewImage = productDto.PreviewImage;
-                productEntity.Status = "Draft";
-                productEntity.UserId = productDto.UserId;
-                productEntity.ImageUrls = new[] { productDto.PreviewImage };
+                var imageUrls = new List<string>();
+                foreach (var image in productDto.Images)
+                {
+                    var url = await productImageService.UploadProductImageAsync(image);
+                    imageUrls.Add(url);
+                }
+                productEntity.ImageUrls = imageUrls.ToArray();
             }
             else
             {
-                if (productDto.Images is { Length: > 0 })
-                {
-                    var imageUrls = new List<string>();
-                    foreach (var image in productDto.Images)
-                    {
-                        var url = await productImageService.UploadProductImageAsync(image);
-                        imageUrls.Add(url);
-                    }
-                    productEntity.ImageUrls = imageUrls.ToArray();
-                }
-                else
-                {
-                    productEntity.ImageUrls = Array.Empty<string>();
-                }
-
-                productEntity.DesignData = null;
-                productEntity.PreviewImage = null;
-                productEntity.Status = null;
-                productEntity.UserId = null;
+                productEntity.ImageUrls = Array.Empty<string>();
             }
 
+             
             var insertedProduct = await productRepository.InsertAsync(productEntity);
 
-            if (productDto.CategoryIds != null && productDto.CategoryIds.Any())
-            {
-                var catGuids = productDto.CategoryIds
-                    .Where(x => Guid.TryParse(x, out _))
-                    .Select(Guid.Parse)
-                    .ToList();
+            
+            // added for ProductCategory table
+            var catGuids = productDto.CategoryIds
+                .Where(x => Guid.TryParse(x, out _))
+                .Select(Guid.Parse)
+                .ToList();
 
-                await productCategoryRepository.UpdateProductCategoriesAsync(insertedProduct.Id, catGuids);
-            }
+            await productCategoryRepository.UpdateProductCategoriesAsync(insertedProduct.Id, catGuids);
 
+            
             await unitOfWork.CommitTransactionAsync();
             await unitOfWork.SaveChangesAsync();
 
@@ -292,12 +281,15 @@ public class ProductService(
         Guid id,
         UpdateProductDto productDto)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
         var product = await productRepository.GetQueryableEntities()
-            .FirstOrDefaultAsync(p => p.Id == id && p.ShopId == shop.Id);
+            .FirstOrDefaultAsync(p => p.Id == id && p.ShopId.ToString() == shop.ShopId);
 
         if (product == null)
             return false;
@@ -349,12 +341,15 @@ public class ProductService(
         Guid currentUserId,
         Guid productId)
     {
-        var shop = await shopRepository.GetShopByOwnerIdAsync(currentUserId);
+        var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
+        {
+            OwnerUserId = currentUserId.ToString()
+        });
         if (shop == null)
             throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
 
         var product = await productRepository.GetQueryableEntities()
-            .FirstOrDefaultAsync(p => p.Id == productId && p.ShopId == shop.Id);
+            .FirstOrDefaultAsync(p => p.Id == productId && p.ShopId.ToString() == shop.ShopId);
 
         if (product == null)
             return false;
