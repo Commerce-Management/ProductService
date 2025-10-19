@@ -12,11 +12,10 @@ public class ProductProfile : Profile
             .ForMember(dest => dest.Id,      opt => opt.Ignore())
             .ForMember(dest => dest.ImageUrls, opt => opt.Ignore())
             .ForMember(dest => dest.ProductCategories, opt => opt.Ignore())
-            .ForMember(dest => dest.OrderItems, opt => opt.Ignore())
-            .ForMember(dest => dest.DesignData, opt => opt.Ignore())
-            .ForMember(dest => dest.PreviewImage, opt => opt.Ignore())
-            .ForMember(dest => dest.Status, opt => opt.Ignore())
-            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            // .ForMember(dest => dest.DesignData, opt => opt.Ignore())
+            // .ForMember(dest => dest.PreviewImage, opt => opt.Ignore())
+            // .ForMember(dest => dest.Status, opt => opt.Ignore())
+            // .ForMember(dest => dest.UserId, opt => opt.Ignore())
             // ← маппим ShopId прямо из DTO
             .ForMember(dest => dest.ShopId, opt => opt.MapFrom(src => src.ShopId));
 
@@ -31,11 +30,11 @@ public class ProductProfile : Profile
                 src.ProductCategories
                     .Select(pc => new CategoryNameDto(pc.Category.Id.ToString(), pc.Category.Name))
                     .ToList()
-            ))
-            .ForCtorParam("DesignData", opt => opt.MapFrom(src => src.DesignData))
-            .ForCtorParam("PreviewImage", opt => opt.MapFrom(src => src.PreviewImage))
-            .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status))
-            .ForCtorParam("UserId", opt => opt.MapFrom(src => src.UserId));
+            ));
+            // .ForCtorParam("DesignData", opt => opt.MapFrom(src => src.DesignData))
+            // .ForCtorParam("PreviewImage", opt => opt.MapFrom(src => src.PreviewImage))
+            // .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status))
+            // .ForCtorParam("UserId", opt => opt.MapFrom(src => src.UserId));
             
         CreateMap<UpdateProductDto, Product>();
     }
