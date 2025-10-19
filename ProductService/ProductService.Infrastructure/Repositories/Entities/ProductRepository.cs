@@ -63,11 +63,11 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
                 p.Price,
                 p.StockQuantity,
                 p.ImageUrls,
-                p.ProductCategories.Select(pc => new CategoryNameDto(pc.Category.Id.ToString(), pc.Category.Name)).ToList(),
-                p.DesignData,
-                p.PreviewImage,
-                p.Status,
-                p.UserId
+                p.ProductCategories.Select(pc => new CategoryNameDto(pc.Category.Id.ToString(), pc.Category.Name)).ToList()
+                // p.DesignData,
+                // p.PreviewImage,
+                // p.Status,
+                // p.UserId
             ))
             .ToListAsync();
 
