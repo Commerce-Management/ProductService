@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,14 @@ using ProductService.Shared.DTO.Jwt;
 using ProductService.Shared.Protos.GrpcShopService;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+//gRPC - Client 
+builder.Services.AddGrpcClient<ShopService.ShopServiceClient>(options =>
+{
+    options.Address = new Uri(builder.Configuration["gRPC:ShopService"]); 
+});
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -153,20 +162,13 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 
 
-//gRPC - Client 
-builder.Services.AddGrpcClient<ShopService.ShopServiceClient>(options =>
-{
-    options.Address = new Uri(builder.Configuration["gRPC:UserService"]); 
-});
-
-
 
 // вариант A — передать пустой делегат + типы профилей
 builder.Services.AddAutoMapper(cfg => { }, typeof(ProductService.Core.Profiles.ProductProfile));
 
 builder.Services.AddDbContext<ProductDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("ShopService.Infrastructure"))
+        b => b.MigrationsAssembly("ProductService.Infrastructure"))
 );
 
 

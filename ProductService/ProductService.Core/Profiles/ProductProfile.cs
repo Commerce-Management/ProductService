@@ -25,12 +25,7 @@ public class ProductProfile : Profile
             .ForCtorParam("Description", opt => opt.MapFrom(src => src.Description ?? ""))
             .ForCtorParam("Price", opt => opt.MapFrom(src => src.Price))
             .ForCtorParam("StockQuantity", opt => opt.MapFrom(src => src.StockQuantity))
-            .ForCtorParam("ImageUrls", opt => opt.MapFrom(src => src.ImageUrls))
-            .ForCtorParam("Categories", opt => opt.MapFrom(src =>
-                src.ProductCategories
-                    .Select(pc => new CategoryNameDto(pc.Category.Id.ToString(), pc.Category.Name))
-                    .ToList()
-            ));
+            .ForCtorParam("ImageUrls", opt => opt.MapFrom(src => src.ImageUrls));
             // .ForCtorParam("DesignData", opt => opt.MapFrom(src => src.DesignData))
             // .ForCtorParam("PreviewImage", opt => opt.MapFrom(src => src.PreviewImage))
             // .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status))

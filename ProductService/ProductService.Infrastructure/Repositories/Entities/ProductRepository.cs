@@ -12,7 +12,7 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
     private IQueryable<Product> GetProductQuery() =>
         Entities
             .Include(product => product.ProductCategories)
-            .ThenInclude(pc => pc.Category)
+            .ThenInclude(pc => pc.CategoryId)
             .AsNoTracking();
 
     public async Task<ICollection<Product>> GetAllProductsAsync()
@@ -62,12 +62,7 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
                 p.Description,
                 p.Price,
                 p.StockQuantity,
-                p.ImageUrls,
-                p.ProductCategories.Select(pc => new CategoryNameDto(pc.Category.Id.ToString(), pc.Category.Name)).ToList()
-                // p.DesignData,
-                // p.PreviewImage,
-                // p.Status,
-                // p.UserId
+                p.ImageUrls
             ))
             .ToListAsync();
 

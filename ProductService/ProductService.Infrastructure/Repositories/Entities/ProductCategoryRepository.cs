@@ -11,12 +11,12 @@ public class ProductCategoryRepository(ProductDbContext context) : Repository<Pr
     private IQueryable<ProductCategory> GetProductCategoryQuery() =>
         Entities
             .Include(pc => pc.Product)
-            .Include(pc => pc.Category)
+            .Include(pc => pc.CategoryId)
             .AsNoTracking();
 
     public async Task UpdateProductCategoriesAsync(Guid productId, IEnumerable<Guid> categoryIds)
     {
-        var allCategories = await context.Categories
+        var allCategories = await context.ProductCategories
             .AsNoTracking()
             .ToListAsync();
 

@@ -3,16 +3,14 @@ syntax = "proto3";
 option csharp_namespace = "ProductService.Shared.Protos.GrpcShopService";
 
 service ShopService {
-  rpc GetShopByOwner(GetShopByOwnerRequest) returns (GetShopByOwnerResponse);
+  rpc GetShopById(GetShopByIdRequest) returns (GetShopByIdResponse);
 }
 
-message GetShopByOwnerRequest {
-  string ownerUserId = 1;
+message GetShopByIdRequest {
+  string shopId = 1;
 }
 
-message GetShopByOwnerResponse {
-  string shopId = 1;       
-  bool isActive = 2;
-  string message = 3;       
+message GetShopByIdResponse {
+  string Id = 1;       
 }
 

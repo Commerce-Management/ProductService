@@ -23,10 +23,5 @@ public record CreateProductDto(
     int StockQuantity,
     
     [Required]
-    List<string> CategoryIds,
-    
-    // New fields for custom bags (made nullable to not break existing product creation)
-    string? DesignData,
-    string? PreviewImage,
-    Guid? UserId // Use Guid? for nullable Guid
+    List<string> CategoryIds
 );

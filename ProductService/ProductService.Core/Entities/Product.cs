@@ -20,7 +20,6 @@ public class Product : IEntity
     //public string? Status { get; set; } // Draft, Ordered
     //public Guid? UserId { get; set; } // ID пользователя, создавшего дизайн
     
-    
     public Guid ShopId { get; set; } 
     
     public virtual ICollection<ProductCategory> ProductCategories { get; set; } = new List<ProductCategory>();
