@@ -11,7 +11,6 @@ public class ProductCategoryRepository(ProductDbContext context) : Repository<Pr
     private IQueryable<ProductCategory> GetProductCategoryQuery() =>
         Entities
             .Include(pc => pc.Product)
-            .Include(pc => pc.CategoryId)
             .AsNoTracking();
 
     public async Task UpdateProductCategoriesAsync(Guid productId, IEnumerable<Guid> categoryIds)
