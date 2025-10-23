@@ -32,26 +32,5 @@ public class ProductConfig : IEntityTypeConfiguration<Product>
         builder.Property(e => e.ImageUrls)
             .IsRequired()
             .HasColumnType("text[]");
-        
-        
-        
-        
-// - For 3d unvailable now
-        // builder.Property(p => p.DesignData)
-        //     .HasColumnType("jsonb")
-        //     .IsRequired(false);
-        //
-        // builder.Property(p => p.PreviewImage)
-        //     .HasColumnType("text")
-        //     .IsRequired(false);
-        //
-        // builder.Property(p => p.Status)
-        //     .HasMaxLength(50)
-        //     .HasColumnType("text")
-        //     .IsRequired(false);
-        //
-        // builder.Property(p => p.UserId)
-        //     .IsRequired(false)
-        //     .HasColumnType("uuid");
     }
 }

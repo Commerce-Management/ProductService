@@ -12,14 +12,30 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
     private IQueryable<Product> GetProductQuery() =>
         Entities
             .Include(product => product.ProductCategories)
-            .ThenInclude(pc => pc.CategoryId)
             .AsNoTracking();
 
-    public async Task<ICollection<Product>> GetAllProductsAsync()
+    public async Task<ICollection<Product>> GetAllProductsAsync(int page, int pageSize)
     {
+        var skip = (page - 1) * pageSize;
+        
         return await GetProductQuery()
             .OrderByDescending(product => product.Name)
+            .Skip(skip)
+            .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetAllShopProductsAsync(Guid shopId, int page, int pageSize)
+    {
+        var skip = (page - 1) * pageSize;
+        
+        return await Entities.Where(product => product.ShopId == shopId)
+            .OrderByDescending(product => product.Name)
+            .Skip(skip)
+            .Take(pageSize)
+            .AsNoTracking().ToListAsync();
+        
     }
 
     public async Task<Product?> GetProductByIdAsync(Guid id)
@@ -32,42 +48,6 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
         await GetProductQuery()
             .Where(product => productIds.Contains(product.Id))
             .ToListAsync();
-    
-    public async Task<(ICollection<Product> Products, int TotalCount)> GetPaginatedProductsAsync(int pageNumber, int pageSize)
-    {
-        var query = GetProductQuery();
-        var totalCount = await query.CountAsync();
-        
-        var products = await query
-            .OrderByDescending(product => product.Name)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return (products, totalCount);
-    }
-
-    public async Task<(IEnumerable<GetProductDto> Products, int TotalCount)> GetPaginatedProductsOptimizedAsync(int pageNumber, int pageSize)
-    {
-        var query = GetProductQuery();
-        var totalCount = await query.CountAsync();
-
-        var products = await query
-            .OrderByDescending(p => p.Name)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => new GetProductDto(
-                p.Id.ToString(),
-                p.Name,
-                p.Description,
-                p.Price,
-                p.StockQuantity,
-                p.ImageUrls
-            ))
-            .ToListAsync();
-
-        return (products, totalCount);
-    }
 
     public IQueryable<Product> GetQueryableEntities() => GetProductQuery();
 }
