@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using AutoMapper;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using ProductService.Core.Entities;
 using ProductService.Core.Interfaces;
@@ -20,196 +21,77 @@ public class ProductService(
     ShopService.ShopServiceClient shopServiceClient,
     IMapper mapper) : IProductService
 {
-    // public async Task<(IEnumerable<GetProductDto> Products, int TotalCount)> GetPaginatedProductsAsync(
-    //     Guid currentUserId,
-    //     int pageNumber,
-    //     int pageSize,
-    //     bool loadFullImages = false,
-    //     Guid? categoryId = null,
-    //     string? sortField = null,
-    //     string? sortDirection = "asc")
-    // {
-    //
-    //     var shop = await shopServiceClient.GetShopByIdAsync(new GetShopByIdRequest()
-    //     {
-    //         ShopId = currentUserId.ToString()
-    //     });
-    //     
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Shop is not found by this id");
-    //     if(!shop.IsActive)
-    //         throw new InvalidOperationException("Access for this shop is locked");
-    //
-    //     var query = productRepository.GetQueryableEntities()
-    //         .Where(p => p.ShopId.ToString() == shop.ShopId)
-    //         .Include(p => p.ProductCategories)
-    //             .ThenInclude(pc => pc.CategoryId)
-    //         .AsNoTracking();
-    //
-    //     if (categoryId.HasValue)
-    //     {
-    //         query = query.Where(p => p.ProductCategories.Any(pc => pc.CategoryId == categoryId.Value));
-    //     }
-    //
-    //     if (!string.IsNullOrEmpty(sortField))                         
-    //     {                                                                         
-    //         var propertyInfo = typeof(Product).GetProperty(sortField, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-    //         if (propertyInfo != null)
-    //         {
-    //             var parameter = Expression.Parameter(typeof(Product), "p");
-    //             var property = Expression.Property(parameter, propertyInfo);
-    //             var lambda = Expression.Lambda(property, parameter);
-    //
-    //             var method = typeof(Queryable)
-    //                 .GetMethods()
-    //                 .Where(m => m.Name == (sortDirection?.ToLower() == "desc" ? "OrderByDescending" : "OrderBy")
-    //                             && m.IsGenericMethodDefinition
-    //                             && m.GetGenericArguments().Length == 2
-    //                             && m.GetParameters().Length == 2)
-    //                 .First()
-    //                 .MakeGenericMethod(typeof(Product), propertyInfo.PropertyType);
-    //
-    //             query = (IQueryable<Product>)method.Invoke(null, new object[] { query, lambda });
-    //         }
-    //         else
-    //         {
-    //             query = query.OrderByDescending(p => p.Name);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         query = query.OrderByDescending(p => p.Name);
-    //     }
-    //
-    //     var totalCount = await query.CountAsync();
-    //
-    //     var products = await query
-    //         .Skip((pageNumber - 1) * pageSize)
-    //         .Take(pageSize)
-    //         .Select(p => new GetProductDto(
-    //             p.Id.ToString(),
-    //             p.Name,
-    //             p.Description,
-    //             p.Price,
-    //             p.StockQuantity,
-    //             p.ImageUrls
-    //         ))
-    //         .ToListAsync();
-    //
-    //     return (products, totalCount);
-    // }
-    //
-    // public async Task<IEnumerable<GetProductDto>> SearchProduct(
-    //     Guid currentUserId,
-    //     string searchTerm,
-    //     bool loadFullImages = false)
-    // {
-    //     var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
-    //     {
-    //         OwnerUserId = currentUserId.ToString()
-    //     });
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
-    //
-    //     var query = productRepository.GetQueryableEntities()
-    //         .Where(p => p.ShopId.ToString() == shop.ShopId)
-    //         .Include(p => p.ProductCategories)
-    //         .ThenInclude(pc => pc.CategoryId)
-    //         .Where(product =>
-    //             EF.Functions.Like(product.Name, $"%{searchTerm}%") ||
-    //             EF.Functions.Like(product.Description, $"%{searchTerm}%"));
-    //
-    //     var products = await query
-    //         .Select(p => new GetProductDto(
-    //             p.Id.ToString(),
-    //             p.Name,
-    //             p.Description,
-    //             p.Price,
-    //             p.StockQuantity,
-    //             p.ImageUrls
-    //         ))
-    //         .ToListAsync();
-    //     return products;
-    // }
-    //
-    // public async Task<IEnumerable<GetProductDto>> GetAllProductsAsync(
-    //     Guid currentUserId,
-    //     bool loadFullImages = false)
-    // {
-    //     var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
-    //     {
-    //         OwnerUserId = currentUserId.ToString()
-    //     });
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
-    //
-    //     var products = await productRepository.GetQueryableEntities()
-    //         .Where(p => p.ShopId.ToString() == shop.ShopId)
-    //         .Include(p => p.ProductCategories)
-    //         .ThenInclude(pc => pc.CategoryId)
-    //         .AsNoTracking()
-    //         .ToListAsync();
-    //
-    //     var productDtos = mapper.Map<IEnumerable<GetProductDto>>(products);
-    //
-    //     if (!loadFullImages)
-    //     {
-    //         productDtos = productDtos.Select(p =>
-    //         {
-    //             if (p.ImageUrls != null && p.ImageUrls.Length > 0)
-    //             {
-    //                 return p with { ImageUrls = new[] { p.ImageUrls[0] } };
-    //             }
-    //             return p;
-    //         }).ToList();
-    //     }
-    //     return productDtos;
-    // }
-    //
-    //
-    // public async Task<GetProductDto> GetProductByIdAsync(
-    //     Guid currentUserId,
-    //     Guid id,
-    //     bool loadFullImages = true)
-    // {
-    //     var shop = await shopServiceClient.GetShopByOwnerAsync(new GetShopByOwnerRequest
-    //     {
-    //         OwnerUserId = currentUserId.ToString()
-    //     });
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
-    //
-    //     var product = await productRepository.GetQueryableEntities()
-    //         .FirstOrDefaultAsync(p => p.Id == id && p.ShopId.ToString() == shop.ShopId);
-    //
-    //     if (product == null)
-    //         return null!;
-    //
-    //     var productDto = mapper.Map<GetProductDto>(product);
-    //
-    //     if (!loadFullImages && productDto.ImageUrls != null && productDto.ImageUrls.Length > 0)
-    //     {
-    //         productDto = productDto with { ImageUrls = new[] { productDto.ImageUrls[0] } };
-    //     }
-    //
-    //     return productDto;
-    // }
-
-
-     public async Task<GetProductDto> CreateProductAsync(CreateProductDto productDto)
+    public async Task<IEnumerable<GetProductDto>> SearchProduct(string parameter, int page)
     {
-        var shopId = await shopServiceClient.GetShopByIdAsync(new GetShopByIdRequest()
+        var allProducts = await productRepository.GetAllProductsAsync(page, pageSize: 30);
+
+        var filteredProducts = allProducts.Where(product =>
+            product.Name.Contains(parameter, StringComparison.OrdinalIgnoreCase) ||
+            product.Description.Contains(parameter, StringComparison.OrdinalIgnoreCase)
+        );
+
+        return mapper.Map<IEnumerable<GetProductDto>>(filteredProducts);
+    }
+    
+    public async Task<IEnumerable<GetProductDto>> GetAllProductsAsync(int page)
+    {
+        var products = await productRepository.GetAllProductsAsync(page, pageSize: 30);
+        return mapper.Map<IEnumerable<GetProductDto>>(products);
+    }
+    
+    public async Task<GetProductDto> GetProductByIdAsync(Guid productId)
+    {
+        var product = await productRepository.GetProductByIdAsync(productId);
+        
+        if (product == null) return null!;
+    
+        return mapper.Map<GetProductDto>(product);
+    }
+
+    public async Task<IEnumerable<GetProductDto>> GetAllShopProductsAsync(Guid shopId, int page)
+    {
+        var shop = shopServiceClient.GetShopById(new GetShopByIdRequest()
         {
-            ShopId = productDto.ShopId
+            ShopId = shopId.ToString()
         });
 
-        if (shopId == null)
-            throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
+        if (shop == null)
+            throw new NullReferenceException("Shop by this ID is null");
+        
+        var products = await productRepository.GetAllShopProductsAsync(shopId, page, pageSize: 30);
+        return mapper.Map<IEnumerable<GetProductDto>>(products);
+    }
 
-        if (productDto.ShopId != shopId.Id)
-            throw new InvalidOperationException("Вы пытаетесь создать товар в чужом магазине.");
 
-        await unitOfWork.BeginTransactionAsync();
+     public async Task<GetProductDto> CreateProductAsync(Guid userId, CreateProductDto productDto)
+     { 
+         ValidateShopOwnershipResponse shop;
+        try
+        { 
+            shop = await shopServiceClient.ValidateShopOwnershipAsync(new ValidateShopOwnershipRequest()
+            {
+                ShopId = productDto.ShopId,
+                UserId = userId.ToString()
+            });
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+        {
+            throw new InvalidOperationException("Shop service is temporarily unavailable. Please try again later.");
+        }
+        catch (RpcException ex)
+        {
+            throw new InvalidOperationException("Unable to verify shop ownership");
+        }
+        
+        if (!shop.ShopExists)
+            throw new KeyNotFoundException($"Shop {productDto.ShopId} not found");
+
+        if (!shop.IsOwner)
+            throw new UnauthorizedAccessException("You are not the owner of this shop");
+
+        if (!shop.ShopIsActive)
+            throw new InvalidOperationException("Shop is not active. Cannot add products.");
+        
         try
         {
             var productEntity = mapper.Map<Product>(productDto);
@@ -225,10 +107,9 @@ public class ProductService(
                 productEntity.ImageUrls = imageUrls.ToArray();
             }
             else
-            {
                 productEntity.ImageUrls = Array.Empty<string>();
-            }
-
+            
+            await unitOfWork.BeginTransactionAsync();
              
             var insertedProduct = await productRepository.InsertAsync(productEntity);
 
@@ -256,86 +137,130 @@ public class ProductService(
     }
 
 
-    // public async Task<bool> UpdateProductAsync(
-    //     Guid currentUserId,
-    //     Guid id,
-    //     UpdateProductDto productDto)
-    // {
-    //     var shop = await shopServiceClient.GetShopByIdAsync(new GetShopByIdRequest()
-    //     {
-    //         ShopId = currentUserId.ToString()
-    //     });
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
-    //
-    //     var product = await productRepository.GetQueryableEntities()
-    //         .FirstOrDefaultAsync(p => p.Id == id && p.ShopId.ToString() == shop.Id);
-    //
-    //     if (product == null)
-    //         return false;
-    //
-    //     product.Name = productDto.Name;
-    //     product.Description = productDto.Description;
-    //     product.Price = productDto.Price;
-    //     product.StockQuantity = productDto.StockQuantity;
-    //
-    //     var existingImageUrls = product.ImageUrls != null
-    //         ? product.ImageUrls.ToList()
-    //         : new List<string>();
-    //
-    //     if (productDto.RemoveImageUrls != null && productDto.RemoveImageUrls.Any())
-    //     {
-    //         existingImageUrls = existingImageUrls
-    //             .Where(url => !productDto.RemoveImageUrls.Contains(url))
-    //             .ToList();
-    //     }
-    //
-    //     if (productDto.NewImages != null && productDto.NewImages.Length > 0)
-    //     {
-    //         foreach (var image in productDto.NewImages)
-    //         {
-    //             var url = await productImageService.UploadProductImageAsync(image);
-    //             existingImageUrls.Add(url);
-    //         }
-    //     }
-    //
-    //     product.ImageUrls = existingImageUrls.ToArray();
-    //
-    //     if (productDto.CategoryIds != null && productDto.CategoryIds.Any())
-    //     {
-    //         var catGuids = productDto.CategoryIds
-    //             .Where(x => Guid.TryParse(x, out _))
-    //             .Select(Guid.Parse)
-    //             .ToList();
-    //
-    //         await productCategoryRepository.UpdateProductCategoriesAsync(product.Id, catGuids);
-    //     }
-    //
-    //     productRepository.Update(product);
-    //     var result = await productRepository.SaveChangesAsync();
-    //     return result > 0;
-    // }
-    //
-    //
-    // public async Task<bool> DeleteProductAsync(
-    //     Guid currentUserId,
-    //     Guid productId)
-    // {
-    //     var shop = await shopServiceClient.GetShopByIdAsync(new GetShopByIdRequest()
-    //     {
-    //         ShopId = currentUserId.ToString()
-    //     });
-    //     if (shop == null)
-    //         throw new InvalidOperationException("Магазин не найден или доступ закрыт.");
-    //
-    //     var product = await productRepository.GetQueryableEntities()
-    //         .FirstOrDefaultAsync(p => p.Id == productId && p.ShopId.ToString() == shop.Id);
-    //
-    //     if (product == null)
-    //         return false;
-    //
-    //     productRepository.Delete(product);
-    //     var result = await productRepository.SaveChangesAsync();
-    //     return result > 0;
-    // }
+    public async Task<bool> UpdateProductAsync(Guid userId, Guid id, UpdateProductDto productDto)
+    {
+        if (productDto == null)
+            throw new ArgumentNullException(nameof(productDto));
+
+        if (!Guid.TryParse(productDto.ShopId, out var shopId))
+            throw new ArgumentException("Invalid ShopId format");
+
+        ValidateShopOwnershipResponse shopValidation;
+        try
+        {
+            shopValidation = await shopServiceClient.ValidateShopOwnershipAsync(
+                new ValidateShopOwnershipRequest
+                {
+                    ShopId = productDto.ShopId,
+                    UserId = userId.ToString()
+                });
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+        {
+            throw new InvalidOperationException("Shop service is temporarily unavailable. Please try again later.");
+        }
+        catch (RpcException ex)
+        {
+            throw new InvalidOperationException("Unable to verify shop ownership");
+        }
+
+        if (!shopValidation.ShopExists)
+            throw new KeyNotFoundException($"Shop {shopId} not found");
+
+        if (!shopValidation.IsOwner)
+            throw new UnauthorizedAccessException("You are not the owner of this shop");
+
+        if (!shopValidation.ShopIsActive)
+            throw new InvalidOperationException("Shop is not active. Cannot update products.");
+
+        var product = await productRepository.GetQueryableEntities()
+            .FirstOrDefaultAsync(p => p.Id == id && p.ShopId == shopId);  // ✅ правильное сравнение!
+
+        if (product == null)
+            throw new KeyNotFoundException($"Product {id} not found in your shop");
+    
+        product.Name = productDto.Name;
+        product.Description = productDto.Description;
+        product.Price = productDto.Price;
+        product.StockQuantity = productDto.StockQuantity;
+    
+        var existingImageUrls = product.ImageUrls != null
+            ? product.ImageUrls.ToList()
+            : new List<string>();
+    
+        if (productDto.RemoveImageUrls != null && productDto.RemoveImageUrls.Any())
+        {
+            existingImageUrls = existingImageUrls
+                .Where(url => !productDto.RemoveImageUrls.Contains(url))
+                .ToList();
+        }
+    
+        if (productDto.NewImages != null && productDto.NewImages.Length > 0)
+        {
+            foreach (var image in productDto.NewImages)
+            {
+                var url = await productImageService.UploadProductImageAsync(image);
+                existingImageUrls.Add(url);
+            }
+        }
+    
+        product.ImageUrls = existingImageUrls.ToArray();
+    
+        if (productDto.CategoryIds != null && productDto.CategoryIds.Any())
+        {
+            var catGuids = productDto.CategoryIds
+                .Where(x => Guid.TryParse(x, out _))
+                .Select(Guid.Parse)
+                .ToList();
+    
+            await productCategoryRepository.UpdateProductCategoriesAsync(product.Id, catGuids);
+        }
+    
+        productRepository.Update(product);
+        var result = await productRepository.SaveChangesAsync();
+        return result > 0;
+    }
+    
+    
+    
+    public async Task<bool> DeleteProductAsync(Guid userId, Guid shopId, Guid productId)
+    {
+        ValidateShopOwnershipResponse shopValidation;
+        try
+        {
+            shopValidation = await shopServiceClient.ValidateShopOwnershipAsync(
+                new ValidateShopOwnershipRequest
+                {
+                    ShopId = shopId.ToString(),
+                    UserId = userId.ToString()
+                });
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable)
+        {
+            throw new InvalidOperationException("Shop service is temporarily unavailable. Please try again later.");
+        }
+        catch (RpcException ex)
+        {
+            throw new InvalidOperationException("Unable to verify shop ownership");
+        }
+
+        if (!shopValidation.ShopExists)
+            throw new KeyNotFoundException($"Shop {shopId} not found");
+
+        if (!shopValidation.IsOwner)
+            throw new UnauthorizedAccessException("You are not the owner of this shop");
+
+        if (!shopValidation.ShopIsActive)
+            throw new InvalidOperationException("Shop is not active. Cannot update products.");
+
+        var product = await productRepository.GetQueryableEntities()
+            .FirstOrDefaultAsync(p => p.Id == productId && p.ShopId == shopId);  // ✅ правильное сравнение!
+    
+        if (product == null)
+            throw new KeyNotFoundException($"Product {productId} not found in your shop");
+    
+        productRepository.Delete(product);
+        var result = await productRepository.SaveChangesAsync();
+        return result > 0;
+    }
 }
