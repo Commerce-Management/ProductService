@@ -5,13 +5,27 @@ package shop;
 
 service ShopService {
   rpc GetShopById(GetShopByIdRequest) returns (GetShopByIdResponse);
+  rpc ValidateShopOwnership(ValidateShopOwnershipRequest) returns (ValidateShopOwnershipResponse);
 }
 
 message GetShopByIdRequest {
-  string shopId = 1;
+  string shop_id = 1;
 }
 
 message GetShopByIdResponse {
-  string Id = 1;       
+  string id = 1;
+  string owner_id = 2;
+  string name = 3;
+  bool is_active = 4;
+}
+message ValidateShopOwnershipRequest {
+  string shop_id = 1;
+  string user_id = 2;
+}
+
+message ValidateShopOwnershipResponse {
+  bool is_owner = 1;
+  bool shop_exists = 2;
+  bool shop_is_active = 3;
 }
 
