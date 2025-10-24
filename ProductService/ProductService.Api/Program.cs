@@ -30,6 +30,22 @@ builder.Services.AddGrpcClient<CategoryService.CategoryServiceClient>(options =>
     options.Address = new Uri(builder.Configuration["gRPC:CategoryService"]); 
 });
 
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    
+    options.Listen(IPAddress.Any, 5011, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+    });
+    
+
+    options.Listen(IPAddress.Any, 5003, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2; 
+    });
+}); 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -136,6 +152,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddGrpc();
 builder.Services.AddControllers();
 
 //Cookie
@@ -189,6 +206,8 @@ app.UseCookiePolicy();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGrpcService<ProductService.Infrastructure.gRPC.GrpcProductService>();
 app.MapControllers();
 
 
