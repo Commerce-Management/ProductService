@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Core.Interfaces;
 using ProductService.Shared.DTO;
+using ProductService.Shared.DTO.DetailDtos;
 using Serilog;
 
 
@@ -94,6 +95,33 @@ public class ProductsController(IProductService productService) : ControllerBase
         try
         {
             var product = await productService.GetProductByIdAsync(id);
+            
+            if (product == null)
+                return NotFound(new { 
+                    Error      = $"Product with ID: {id} not found.", 
+                    Exception  = "NotFoundException", 
+                    StackTrace = string.Empty 
+                });
+    
+            return Ok(product);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Ошибка при получении продукта {ProductId}", id);
+            return StatusCode(500, new {
+                Error      = ex.Message,
+                Exception  = ex.GetType().Name,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+    
+    [HttpGet("{id:guid}/detail", Name = "getDetailedProductById")]
+    public async Task<ActionResult<GetProductDetailDto>> GetDetailProductById(Guid id)
+    {
+        try
+        {
+            var product = await productService.GetDetailProductByIdAsync(id);
             
             if (product == null)
                 return NotFound(new { 
