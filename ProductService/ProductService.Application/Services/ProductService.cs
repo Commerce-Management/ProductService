@@ -9,6 +9,8 @@ using ProductService.Infrastructure.Interfaces.Base;
 using ProductService.Infrastructure.Interfaces.Entities;
 using ProductService.Shared.DTO;
 using Grpc.Net.Client;
+using ProductService.Shared.DTO.DetailDtos;
+using ProductService.Shared.Protos.GrpcCategoryService;
 using ProductService.Shared.Protos.GrpcShopService;
 
 namespace ProductService.Application.Services;
@@ -19,6 +21,7 @@ public class ProductService(
     IProductImageService productImageService,
     IProductCategoryRepository productCategoryRepository,
     ShopService.ShopServiceClient shopServiceClient,
+    CategoryService.CategoryServiceClient categoryServiceClient,
     IMapper mapper) : IProductService
 {
     public async Task<IEnumerable<GetProductDto>> SearchProduct(string parameter, int page)
@@ -62,6 +65,57 @@ public class ProductService(
         return mapper.Map<IEnumerable<GetProductDto>>(products);
     }
 
+    public async Task<GetProductDetailDto> GetDetailProductByIdAsync(Guid productId)
+    {
+        var product = await productRepository.GetProductByIdAsync(productId);
+        if (product == null)
+            return null!;
+
+        var categoryId = await productCategoryRepository.GetCategoryIdByProductIdAsync(productId);
+        
+        var shop = await shopServiceClient.GetShopByIdAsync(new GetShopByIdRequest()
+        {
+            ShopId = product.ShopId.ToString()
+        });
+
+        var category = await categoryServiceClient.GetCategoryByIdAsync(new GetCategoryByIdRequest()
+        {
+            CategoryId = categoryId.ToString()
+        });
+        
+        // Собираем DTO
+        return new GetProductDetailDto(
+                Id: product.Id.ToString(),
+                Name: product.Name,
+                Description: product.Description,
+                Price: product.Price,
+                StockQuantity: product.StockQuantity,
+                ImageUrls: product.ImageUrls,
+                Shop: new ShopInfoDto(
+                    Id: shop.Id,
+                    Name: shop.Name,
+                    OwnerId: shop.OwnerId
+                ),
+                Category: new CategoryInfoDto(
+                    Id: category.Category.Id,
+                    Name: category.Category.Name,
+                    Slug: category.Category.Slug,
+                    Level: category.Category.Level,
+                    IsActive: category.Category.IsActive,
+                    ParentCategory: category.Category.ParentCategory != null
+                        ? new CategoryInfoDto(
+                            Id: category.Category.ParentCategory.Id,
+                            Name: category.Category.ParentCategory.Name,
+                            Slug: null,
+                            Level: category.Category.ParentCategory.Level,
+                            IsActive: true
+                        )
+                        : null
+                )
+            );
+    }
+        
+    
 
      public async Task<GetProductDto> CreateProductAsync(Guid userId, CreateProductDto productDto)
      { 
