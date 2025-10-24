@@ -55,4 +55,20 @@ public class ProductCategoryRepository(ProductDbContext context) : Repository<Pr
 
         await context.SaveChangesAsync();
     }
+
+    public async Task<Guid> GetCategoryIdByProductIdAsync(Guid productId)
+    {
+        var categoryId = await context.ProductCategories
+            .AsNoTracking()
+            .Where(pc => pc.ProductId == productId)
+            .Select(pc => pc.CategoryId)
+            .SingleOrDefaultAsync(); 
+
+        if (categoryId == default)
+            throw new KeyNotFoundException($"No category found for product {productId}");
+
+        return categoryId;
+    }
+
+
 }

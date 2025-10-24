@@ -44,6 +44,7 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
             .SingleOrDefaultAsync(product => product.Id == id);
     }
 
+
     public async Task<IEnumerable<Product>> GetProductsByIdAsync(Guid[] productIds) =>
         await GetProductQuery()
             .Where(product => productIds.Contains(product.Id))
