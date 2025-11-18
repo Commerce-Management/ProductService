@@ -74,4 +74,56 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
         var rounded = decimal.Round(price, 2, MidpointRounding.AwayFromZero);
         return (long)(rounded * 100m);
     }
+    
+    public override async Task<UpdateProductStockResponse> UpdateProductStock(
+        UpdateProductStockRequest request,
+        ServerCallContext context)
+    {
+        if (request == null || request.Updates.Count == 0)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Updates are required"));
+
+        try
+        {
+            // Парсим список
+            var updates = request.Updates
+                .Where(u => Guid.TryParse(u.ProductId, out _))
+                .ToDictionary(
+                    u => Guid.Parse(u.ProductId),
+                    u => u.Quantity
+                );
+
+            // Тянем продукты из репозитория
+            var products = await _productRepository.GetProductsByIdAsync(updates.Keys.ToArray());
+
+            // Проверяем остатки
+            foreach (var product in products)
+            {
+                if (!updates.TryGetValue(product.Id, out var decrease))
+                    continue;
+
+                if (product.StockQuantity < decrease)
+                    throw new RpcException(new Status(StatusCode.FailedPrecondition,
+                        $"Not enough stock for product {product.Name}"));
+            }
+
+            // Если всё ок — уменьшаем
+            foreach (var product in products)
+            {
+                if (updates.TryGetValue(product.Id, out var decrease))
+                {
+                    product.StockQuantity -= decrease;
+                    _productRepository.Update(product);
+                }
+            }
+
+            await _productRepository.SaveChangesAsync();
+            return new UpdateProductStockResponse { Success = true };
+        }
+        catch (RpcException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateProductStock failed");
+            throw new RpcException(new Status(StatusCode.Internal, "Internal server error"));
+        }
+    }
 }
