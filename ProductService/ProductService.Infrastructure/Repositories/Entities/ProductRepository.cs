@@ -50,5 +50,10 @@ public class ProductRepository(ProductDbContext context) : Repository<Product>(c
             .Where(product => productIds.Contains(product.Id))
             .ToListAsync();
 
+    public async Task<int> GetTotalCountAsync()
+    {
+        return await Entities.CountAsync();
+    }
+    
     public IQueryable<Product> GetQueryableEntities() => GetProductQuery();
 }

@@ -6,7 +6,8 @@ using ProductService.Infrastructure.Repositories.Base;
 
 namespace ProductService.Infrastructure.Repositories.Entities;
 
-public class ProductCategoryRepository(ProductDbContext context) : Repository<ProductCategory>(context), IProductCategoryRepository
+public class ProductCategoryRepository(ProductDbContext context)
+    : Repository<ProductCategory>(context), IProductCategoryRepository
 {
     private IQueryable<ProductCategory> GetProductCategoryQuery() =>
         Entities
@@ -62,7 +63,7 @@ public class ProductCategoryRepository(ProductDbContext context) : Repository<Pr
             .AsNoTracking()
             .Where(pc => pc.ProductId == productId)
             .Select(pc => pc.CategoryId)
-            .SingleOrDefaultAsync(); 
+            .SingleOrDefaultAsync();
 
         if (categoryId == default)
             throw new KeyNotFoundException($"No category found for product {productId}");
@@ -70,5 +71,24 @@ public class ProductCategoryRepository(ProductDbContext context) : Repository<Pr
         return categoryId;
     }
 
+    public async Task<IEnumerable<Guid>> GetCategoryIdsByProductIdsAsync(IEnumerable<Guid> productIds)
+    {
+        return await Entities
+            .AsNoTracking()
+            .Where(pc => productIds.Contains(pc.ProductId))
+            .Select(pc => pc.CategoryId)
+            .Distinct()
+            .ToListAsync();
+    }
 
+
+    public async Task<IEnumerable<Guid>> GetProductIdsByCategoryIdsAsync(Guid[] categoryIds)
+    {
+        return await Entities
+            .AsNoTracking()
+            .Where(pc => categoryIds.Contains(pc.CategoryId)) 
+            .Select(pc => pc.ProductId)
+            .Distinct()
+            .ToListAsync();
+    }
 }
