@@ -9,5 +9,7 @@ public interface IProductRepository : IRepository<Product>
     public Task<Product?> GetProductByIdAsync(Guid id);
     public Task<IEnumerable<Product>> GetAllShopProductsAsync(Guid shopId, int page, int pageSize);
     public Task<IEnumerable<Product>> GetProductsByIdAsync(Guid[] productIds);
+    public Task<int> GetTotalCountAsync();
+
     IQueryable<Product> GetQueryableEntities();
 }
