@@ -15,6 +15,7 @@ using ProductService.Infrastructure.Repositories.Base;
 using ProductService.Infrastructure.Repositories.Entities;
 using ProductService.Shared.DTO.Jwt;
 using ProductService.Shared.Protos.GrpcCategoryService;
+using ProductService.Shared.Protos.GrpcOrderService;
 using ProductService.Shared.Protos.GrpcShopService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,11 @@ builder.Services.AddGrpcClient<CategoryService.CategoryServiceClient>(options =>
 {
     options.Address = new Uri(builder.Configuration["gRPC:CategoryService"]); 
 });
+builder.Services.AddGrpcClient<OrderService.OrderServiceClient>(options =>
+{
+    options.Address = new Uri(builder.Configuration["gRPC:OrderService"]); 
+});
+
 
 
 builder.WebHost.ConfigureKestrel(options =>

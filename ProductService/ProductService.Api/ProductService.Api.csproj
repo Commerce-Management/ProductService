@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
-        <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <RootNamespace>ProductService</RootNamespace>
     </PropertyGroup>
 
@@ -27,15 +27,19 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\ProductService.Infrastructure\ProductService.Infrastructure.csproj" />
+        <ProjectReference Include="..\ProductService.Application\ProductService.Application.csproj" />
+        <ProjectReference Include="..\ProductService.Core\ProductService.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ProductService.Infrastructure\ProductService.Infrastructure.csproj" />
-        <ProjectReference Include="..\ProductService.Application\ProductService.Application.csproj" />
-        <ProjectReference Include="..\ProductService.Core\ProductService.Core.csproj" />
+      <Folder Include="Models\" />
     </ItemGroup>
     
 </Project>
