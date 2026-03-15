@@ -190,7 +190,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 
 
-// вариант A — передать пустой делегат + типы профилей
+
 builder.Services.AddAutoMapper(cfg => { }, typeof(ProductService.Core.Profiles.ProductProfile));
 
 builder.Services.AddDbContext<ProductDbContext>(options =>

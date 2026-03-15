@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\ProductService.Infrastructure",
+    "\\ProductService.Infrastructure\\Interfaces",
+    "\\ProductService.Infrastructure\\Repositories",
+    "\\ProductService.Shared"
+  ],
+  "PreviewInSolutionExplorer": false
+}

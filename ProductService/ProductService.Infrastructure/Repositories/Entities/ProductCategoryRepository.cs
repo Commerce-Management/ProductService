@@ -11,7 +11,7 @@ public class ProductCategoryRepository(ProductDbContext context)
 {
     private IQueryable<ProductCategory> GetProductCategoryQuery() =>
         Entities
-            .Include(pc => pc.Product)
+            .Include(pc => pc.Product) 
             .AsNoTracking();
 
     public async Task UpdateProductCategoriesAsync(Guid productId, IEnumerable<Guid> categoryIds)
@@ -71,6 +71,19 @@ public class ProductCategoryRepository(ProductDbContext context)
         return categoryId;
     }
 
+    public async Task<Guid[]> GetCategoryIdsByProductIdAsync(Guid productId)
+    {
+        var ids = await context.ProductCategories
+            .AsNoTracking()
+            .Where(pc => pc.ProductId == productId)
+            .Select(pc => pc.CategoryId)
+            .ToArrayAsync();
+
+        return ids;
+    }
+
+
+
     public async Task<IEnumerable<Guid>> GetCategoryIdsByProductIdsAsync(IEnumerable<Guid> productIds)
     {
         return await Entities
@@ -80,7 +93,7 @@ public class ProductCategoryRepository(ProductDbContext context)
             .Distinct()
             .ToListAsync();
     }
-
+    
 
     public async Task<IEnumerable<Guid>> GetProductIdsByCategoryIdsAsync(Guid[] categoryIds)
     {
@@ -91,4 +104,7 @@ public class ProductCategoryRepository(ProductDbContext context)
             .Distinct()
             .ToListAsync();
     }
+    
+    
+    
 }

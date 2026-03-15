@@ -10,6 +10,13 @@ public interface IProductRepository : IRepository<Product>
     public Task<IEnumerable<Product>> GetAllShopProductsAsync(Guid shopId, int page, int pageSize);
     public Task<IEnumerable<Product>> GetProductsByIdAsync(Guid[] productIds);
     public Task<int> GetTotalCountAsync();
+    Task<(IEnumerable<Product> Items, int TotalCount)> GetProductsPaginatedAsync(int page, int pageSize);
+
+    public Task<ICollection<Product>> GetProductsByCategoriesAsync(
+        Guid[] categoryIds,
+        int page,
+        int pageSize);
+
 
     IQueryable<Product> GetQueryableEntities();
 }

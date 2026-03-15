@@ -9,4 +9,5 @@ public interface IProductCategoryRepository : IRepository<ProductCategory>
     public Task<Guid> GetCategoryIdByProductIdAsync(Guid productId);
     public Task<IEnumerable<Guid>> GetCategoryIdsByProductIdsAsync(IEnumerable<Guid> productIds); // for ML
     public Task<IEnumerable<Guid>> GetProductIdsByCategoryIdsAsync(Guid[] categoryIds); // for ML
+    public Task<Guid[]> GetCategoryIdsByProductIdAsync(Guid productId);
 }

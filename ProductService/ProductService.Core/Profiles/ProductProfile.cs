@@ -16,7 +16,7 @@ public class ProductProfile : Profile
             // .ForMember(dest => dest.PreviewImage, opt => opt.Ignore())
             // .ForMember(dest => dest.Status, opt => opt.Ignore())
             // .ForMember(dest => dest.UserId, opt => opt.Ignore())
-            // ← маппим ShopId прямо из DTO
+           
             .ForMember(dest => dest.ShopId, opt => opt.MapFrom(src => src.ShopId));
 
         CreateMap<Product, GetProductDto>()

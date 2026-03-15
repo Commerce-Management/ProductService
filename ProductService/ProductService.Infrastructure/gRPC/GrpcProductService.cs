@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using ProductService.Core.Interfaces;
 using ProductService.Infrastructure.Interfaces.Entities;
-using ProductService.Shared.Protos.GrpcOrderService; // IProductRepository
+using ProductService.Shared.Protos.GrpcOrderService;  
 using ProductService.Shared.Protos.GrpcProductService;
 
 namespace ProductService.Infrastructure.gRPC;
@@ -34,7 +34,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Request is required"));
 
         if (request.ProductIds.Count == 0)
-            return new GetProductsByIdsResponse(); // пустой ответ — норм
+            return new GetProductsByIdsResponse();  
 
         var parsedIds = request.ProductIds
             .Where(id => Guid.TryParse(id, out _))
@@ -57,7 +57,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                 {
                     Id = p.Id.ToString(),
                     Name = p.Name ?? string.Empty,
-                    Price = DecimalToMinorUnits(p.Price), // decimal -> int64 (копейки/центы)
+                    Price = DecimalToMinorUnits(p.Price),  
                     StockQuantity = p.StockQuantity,
                     ShopId = p.ShopId.ToString()
                 };
@@ -96,7 +96,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
 
         try
         {
-            // Парсим список
+             
             var updates = request.Updates
                 .Where(u => Guid.TryParse(u.ProductId, out _))
                 .ToDictionary(
@@ -104,10 +104,10 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                     u => u.Quantity
                 );
 
-            // Тянем продукты из репозитория
+            
             var products = await _productRepository.GetProductsByIdAsync(updates.Keys.ToArray());
 
-            // Проверяем остатки
+       
             foreach (var product in products)
             {
                 if (!updates.TryGetValue(product.Id, out var decrease))
@@ -118,7 +118,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                         $"Not enough stock for product {product.Name}"));
             }
 
-            // Если всё ок — уменьшаем
+           
             foreach (var product in products)
             {
                 if (updates.TryGetValue(product.Id, out var decrease))
@@ -167,7 +167,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
 
         try
         {
-            // 1. Получаем category IDs из product IDs (из отзывов)
+      
             var categoryIds = await _productCategoryRepository.GetCategoryIdsByProductIdsAsync(parsedProductIds);
 
             if (categoryIds == null || !categoryIds.Any())
@@ -178,7 +178,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                 return new GetCandidateProductIdsByProdIdsFromReviewsResponse();
             }
 
-            // 2. Получаем все product IDs по найденным category IDs
+            
             var candidateProductIds = await _productCategoryRepository
                 .GetProductIdsByCategoryIdsAsync(categoryIds.ToArray());
 
@@ -190,14 +190,14 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                 return new GetCandidateProductIdsByProdIdsFromReviewsResponse();
             }
 
-            // 3. Получаем купленные продукты из OrderService
+         
             var purchasedProductIds = await _orderClient.GetPurchasedProductIdsByUserIdAsync(
                 new GetPurchasedProductIdsByUserIdRequest
                 {
                     UserId = request.UserId
                 });
 
-            // 4. Фильтруем: исключаем уже купленные продукты (со статусами Delivered/Shipped/etc)
+ 
             var purchasedIds = purchasedProductIds.ProductIds
                 .Where(id => Guid.TryParse(id, out _))
                 .Select(Guid.Parse)
@@ -207,7 +207,7 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                 .Where(id => !purchasedIds.Contains(id))
                 .ToList();
 
-            // 5. Формируем ответ
+           
             var response = new GetCandidateProductIdsByProdIdsFromReviewsResponse();
             response.ProductIdsCandidate.AddRange(filteredCandidates.Select(id => id.ToString()));
 
@@ -251,10 +251,10 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
             _logger.LogInformation("GetAllProductsForIndexing: page={Page}, pageSize={PageSize}", 
                 page, pageSize);
 
-            // Получаем продукты
+            
             var products = await _productRepository.GetAllProductsAsync(page, pageSize);
         
-            // Общее количество (для пагинации)
+         
             var totalCount = await _productRepository.GetTotalCountAsync();
 
             var response = new GetAllProductsForIndexingResponse
@@ -270,11 +270,11 @@ public class GrpcProductService : ProductService.Shared.Protos.GrpcProductServic
                     Name = product.Name
                 };
 
-                // Добавляем картинки
+          
                 if (product.ImageUrls?.Any() == true)
                     productForIndexing.ImageUrls.AddRange(product.ImageUrls);
 
-                // Добавляем ID категорий (без названий!)
+      
                 if (product.ProductCategories?.Any() == true)
                 {
                     var categoryIds = product.ProductCategories

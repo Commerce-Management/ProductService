@@ -8,5 +8,5 @@ public record GetProductDetailDto(
     int StockQuantity,
     string[] ImageUrls,
     ShopInfoDto Shop,
-    CategoryInfoDto Category
+    CategoryInfoDto[]? Categories
 );

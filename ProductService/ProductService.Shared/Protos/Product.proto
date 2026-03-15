@@ -10,6 +10,7 @@ service ProductService {
   rpc GetAllProductsForIndexing (GetAllProductsForIndexingRequest) returns (GetAllProductsForIndexingResponse);
 }
 
+
 message GetProductsByIdsRequest {
   repeated string product_ids = 1;
 }
